@@ -1,0 +1,764 @@
+{
+  "name": "第8章案例：票务对账",
+  "nodes": [
+    {
+      "parameters": {
+        "fromEmail": "1755982343@qq.com",
+        "toEmail": "1755982343@qq.com",
+        "subject": "=票务对账结果报告",
+        "text": "={{ $json.output }}",
+        "options": {}
+      },
+      "id": "44665130-29e5-4133-8138-a14435a66a67",
+      "name": "发送对账结果邮件",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        832,
+        400
+      ],
+      "webhookId": "eb680a48-51bb-4c55-a94b-d2f1ced544df",
+      "credentials": {
+        "smtp": {
+          "id": "qucPoITrB5Ljuk5f",
+          "name": "QQ SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "对账失败",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3444d0ca-99bb-47f7-988d-71758467af1e",
+      "name": "对账结果是否有问题？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        784,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    status: 'completed',\n    message: '对账流程正常结束，无异常数据',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "4ac88c0e-4bbd-485c-8735-a563b5cb3cf3",
+      "name": "流程结束",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=对账规则信息：{{ $json.rule }}\n\n发票信息：\n发票ID：:{{ $json.invoice.invoiceId }}\n发票编号：{{ $json.invoice.invoiceNumber }}\n金额：{{ $json.invoice.amount }}\n开票日期{{ $json.invoice.date }}\n供应商：{{ $json.invoice.supplier }}\n税额:{{ $json.invoice.taxAmount }}\n总金额:{{ $json.invoice.totalAmount }}\n付款状态:{{ $json.invoice.status }}\n\n合同信息：\n合同ID：{{ $json.contract.contractId }}\n合同编号：{{ $json.contract.contractNumber }}\n合同金额：{{ $json.contract.amount }}\n合同生效日：{{ $json.contract.startDate }}\n合同到期日：{{ $json.contract.endDate }}\n供应商：{{ $json.contract.supplier }}\n账期：{{ $json.contract.paymentTerms }}\n状态：{{ $json.contract.status }}\n\n\n根据输入的合同信息、发票信息以及对账规则进行对账，如果对账成功返回：\n\n对账结果：对账失败\n\n如果对账失败，需要以列表形式给出具体的失败原因描述，失败原因描述参考如下格式：\n\n对账结果：对账失败\n\n失败原因：\n1. 供应商信息不匹配\n 发票供应商：ABC Supplies Inc.\n 合同供应商：供应商A\n 规则要求：供应商信息必须完全一致，不允许模糊匹配\n2. 日期不在允许范围内\n 发票日期：2023-10-15\n 合同日期范围：2024-01-01 至 2024-12-31\n 规则要求：交易日期最早可提前30天（即最早 2023-12-02），但发票日期早于合同开始日期超过30天\n3. 金额差异超出容差\n 发票金额：1,500\n 合同金额：10,000\n 差异：8,500（远超0.01的容差范围）\n4. 金额有效性校验\n 虽然单笔金额1,500在0.01-10,000,000范围内，但与合同金额严重不符\n\n结论：由于供应商名称不一致、发票日期不在合同有效期内、以及金额差异过大，本次对账验证未通过。",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        448,
+        176
+      ],
+      "id": "5c784b7f-3467-4cf9-b05f-faf1a618d114",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://aura-unappeasable-bria.ngrok-free.dev/api/results",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "result",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        832,
+        0
+      ],
+      "id": "adf2c6f0-8238-4636-b4a9-35f1acc61b21",
+      "name": "回写对账结果到业务系统"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        448,
+        384
+      ],
+      "id": "7a51dc44-41b1-49a9-accb-5f774b3dd032",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "H7Sjuis0MU1pWUIm",
+          "name": "DeepSeek Account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        400
+      ],
+      "id": "f6e9c065-5d81-4501-b4b4-097b85ac8ce6",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.textin.com/ai/service/v1/pdf_to_markdown",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-ti-app-id",
+              "value": "=fee13b8ffe194bd67e5f1831573af3f8"
+            },
+            {
+              "name": "x-ti-secret-code",
+              "value": "=1e48bba97d3514037977c7546da91b11"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "={{ Object.keys($binary).join(',') }}",
+        "options": {}
+      },
+      "id": "f99b2bc6-1beb-4231-9dc3-5fbdcd0c1640",
+      "name": "TextIn OCR识别",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -304,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"invoiceId\": \"INV-2024-001\",\n  \"invoiceNumber\": \"1234567890\",\n  \"amount\": 10000.00,\n  \"date\": \"2024-01-15\",\n  \"supplier\": \"供应商A\",\n  \"taxAmount\": 1300.00,\n  \"totalAmount\": 11300.00,\n  \"status\": \"valid\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        -32
+      ],
+      "id": "9a2c185c-ac9d-42cd-9c17-6d3be7fbf1f1",
+      "name": "发票数据格式"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=基于{{ $json.result.markdown }}中的数据提JSON格式数据，数据格式参考Output Parser中的示例",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -64,
+        -208
+      ],
+      "id": "0811d745-6688-4e4c-8ed8-7ba39756324e",
+      "name": "格式化发票数据"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        -32
+      ],
+      "id": "3939be00-e686-47ea-84e9-c1b175c26883",
+      "name": "DeepSeek Chat Model2",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "H7Sjuis0MU1pWUIm",
+          "name": "DeepSeek Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "你好，我是你的票务对账小助手。",
+        "options": {
+          "allowFileUploads": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -640,
+        -208
+      ],
+      "id": "37ac9cce-dba3-4d70-8c62-be77a062a790",
+      "name": "票务对账聊天触发器",
+      "webhookId": "cbb3f222-30f5-40ba-a301-e1d7f3753580"
+    },
+    {
+      "parameters": {
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "忽略用户上传的附件，只需要根据文字输入获取合同编号，不要加任何文字说明，例如“CON-2024-001”"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -416,
+        48
+      ],
+      "id": "5163b902-2040-4372-971e-c0a24afdf3e8",
+      "name": "基础LLM链 - 获取合同信息"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        224
+      ],
+      "id": "fee89396-2ba6-408c-951e-a3337efeed1e",
+      "name": "DeepSeek Chat Model3",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "H7Sjuis0MU1pWUIm",
+          "name": "DeepSeek Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://aura-unappeasable-bria.ngrok-free.dev/api/contracts/{{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -48,
+        192
+      ],
+      "id": "48ccffd5-f408-4511-9636-8920fd39cb5f",
+      "name": "获取合同数据"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -384
+      ],
+      "id": "3c32ae0a-2692-4809-abef-a59c360ba10b",
+      "name": "DeepSeek Chat Model1",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "H7Sjuis0MU1pWUIm",
+          "name": "DeepSeek Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "blockId": {
+          "__rl": true,
+          "value": "https://www.notion.so/2fb7c279a75680d1aed4cc8052a18f23",
+          "mode": "url"
+        }
+      },
+      "id": "476b786d-e425-4ee6-8e38-312920a15996",
+      "name": "从Notion获取对账规则",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        -432
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "8iX2SPVg6yYWLr5s",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=以下是票务系统的对账规则，对这些规则进行解析，通过文字形式给出规则描述：\n\n{{ $json.results[0].paragraph.text[0].text.content }}\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -112,
+        -544
+      ],
+      "id": "c43a6419-d12a-4ad1-bbc4-873a6cabc9cf",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取上游节点的输出\nconst items = $input.all();\n\n// 定义输出结构\nconst output = {\n  rule: items[0].json.text || items[0].json.rule,\n  invoice: items[1].json.output || items[1].json.invoice,\n  contract: items[2].json\n};\n\n// 返回合并后的结果\nreturn [{ json: output }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -208
+      ],
+      "id": "a2d56c9f-5dec-46ec-a188-9bf7666605e5",
+      "name": "整合数据结构"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        304,
+        -224
+      ],
+      "id": "6f4df067-a72b-4930-8dc6-6e10d1e7e478",
+      "name": "合并数据"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "timestamp",
+              "value": "={{ Date.now() }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f4d1ee43-120e-42d3-8386-daf01a09797a",
+      "name": "Set_Timestamp",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        976,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.dingUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n     \"msgtype\": \"markdown\",\n     \"markdown\": {\n         \"title\":\"测试\",\n         \"text\": {\n              \"对账失败警告\": \"票务对账有失败，请及时查看！\"\n          }\n     },\n      \"at\": {\n          \"atMobiles\": [],\n          \"atUserIds\": [],\n          \"isAtAll\": true\n      }\n }",
+        "options": {
+          "batching": {
+            "batch": {}
+          },
+          "timeout": 5000
+        }
+      },
+      "id": "fe6ceacf-dc56-4a7e-a44d-47cbf3b06e5e",
+      "name": "HTTP_PostDing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1392,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "dingUrl",
+              "value": "={{ 'https://oapi.dingtalk.com/robot/send?access_token=8abde4de2a761fc324bf0611e49699611c97a2c49bd65c7ab9d10af4721d248c&timestamp=' + $json.timestamp + '&sign=' + encodeURIComponent($json.sign) }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dad8b835-facd-4fc1-8b65-7f165a9616e8",
+      "name": "Set_BuildUrl",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "action": "hmac",
+        "type": "sha256",
+        "value": "={{ $json.signString }}",
+        "dataPropertyName": "sign",
+        "secret": "SECe6d1c3f62d2b090079bffe5f36b54f11ffaa579c387b23ed44480b24c8744811",
+        "encoding": "base64"
+      },
+      "id": "fb0326fc-603c-4bf8-9b31-a26f0faf430c",
+      "name": "Crypto_HMAC",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "signString",
+              "value": "={{ $json.timestamp + '\\n' + 'SECe6d1c3f62d2b090079bffe5f36b54f11ffaa579c387b23ed44480b24c8744811' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ed2ec541-faea-4493-a2a8-f61ad123e7b4",
+      "name": "Set_SignString",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        64
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "对账结果是否有问题？": {
+      "main": [
+        [
+          {
+            "node": "Set_Timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "流程结束",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "回写对账结果到业务系统",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "对账结果是否有问题？",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "发送对账结果邮件",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TextIn OCR识别": {
+      "main": [
+        [
+          {
+            "node": "格式化发票数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "发票数据格式": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "格式化发票数据",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式化发票数据": {
+      "main": [
+        [
+          {
+            "node": "合并数据",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "格式化发票数据",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "票务对账聊天触发器": {
+      "main": [
+        [
+          {
+            "node": "TextIn OCR识别",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "基础LLM链 - 获取合同信息",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "从Notion获取对账规则",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "基础LLM链 - 获取合同信息",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "基础LLM链 - 获取合同信息": {
+      "main": [
+        [
+          {
+            "node": "获取合同数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取合同数据": {
+      "main": [
+        [
+          {
+            "node": "合并数据",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "从Notion获取对账规则": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "合并数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整合数据结构": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合并数据": {
+      "main": [
+        [
+          {
+            "node": "整合数据结构",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_Timestamp": {
+      "main": [
+        [
+          {
+            "node": "Set_SignString",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_BuildUrl": {
+      "main": [
+        [
+          {
+            "node": "HTTP_PostDing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto_HMAC": {
+      "main": [
+        [
+          {
+            "node": "Set_BuildUrl",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_SignString": {
+      "main": [
+        [
+          {
+            "node": "Crypto_HMAC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e159790d-a687-4262-961a-683d9b467fa5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ad624615a4bcfedc466fba1d1260fd096b82d5bb3eb66cfb21a92b75a94700f6"
+  },
+  "id": "GfetY2LKhjEuauPS",
+  "tags": []
+}

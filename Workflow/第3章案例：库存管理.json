@@ -1,0 +1,336 @@
+{
+  "name": "第3章案例：库存管理",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "inventory-check-webhook",
+        "options": {}
+      },
+      "id": "8bc109a2-391a-4254-9fd8-b2db2671e874",
+      "name": "订单接收",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        2768,
+        3424
+      ],
+      "webhookId": "edd3261b-936d-4a32-80b7-49987ba99f72"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "1cf7c8e6-78f1-4da0-b396-fdd1ccdcc283",
+      "name": "循环检查库存",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3264,
+        3584
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"stockAvailable\"]}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "33357c6f-6288-4cca-bb99-0fc1d30ba925",
+      "name": "库存是否存在",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        3632,
+        3712
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 简单标记库存状态\nconst item = items[0].json;\nitem.stockCheckResult = $json.stockAvailable ? 'available' : 'not_available';\nitem.sku = item.sku || 'unknown';\nreturn items;"
+      },
+      "id": "bdf0c37a-2c9e-406c-a9ac-f8b1267ba3d0",
+      "name": "标记库存结果",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        3712
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取所有输入项\nconst inputs = $input.all();\n\n// 提取orderId（假设所有项相同，取第一个）\nconst orderId = inputs[0].json.orderId;\n\n// 构建items数组\nconst items = inputs.map(item => ({\n  sku: item.json.sku,\n  stockCheckResult: item.json.stockCheckResult\n}));\n\n// 返回聚合结果\nreturn [{\n  json: {\n    orderId: orderId,\n    items: items\n  }\n}];"
+      },
+      "id": "14a9072c-406c-4572-92fc-23eae309c6f5",
+      "name": "库存结果统计",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        3424
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      orderId: $input.first().json.orderId,\n      sku: $input.first().json.sku,\n      stockAvailable: false\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        3136
+      ],
+      "id": "96defcbf-f397-48fd-adcc-0c06e3440af2",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code 节点 - 扁平化数据\nconst input = $input.first().json;\nconst body = input.body;\n\n// 将每个item转换为独立消息\nconst result = body.items.map(item => ({\n  json: {\n    sku: item.sku, \n    quantity: item.quantity, \n    price: item.price, \n    orderId: body.orderId,\n    customerEmail: body.customerEmail,\n    orderAmount: body.orderAmount\n  }\n}));\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2832,
+        3024
+      ],
+      "id": "30c32f19-5924-420b-9953-90485f5fd437",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.items",
+        "include": "selectedOtherFields",
+        "fieldsToInclude": "body.orderId, body.customerEmail, body.orderAmount",
+        "options": {}
+      },
+      "name": "拆分订单",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        3424
+      ],
+      "id": "0f661471-949c-4866-8b75-662a4fce5dae"
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "sku",
+              "stringValue": "={{ $json['body.items'].sku }}"
+            },
+            {
+              "name": "quantity",
+              "stringValue": "={{ $json['body.items'].quantity }}"
+            },
+            {
+              "name": "price",
+              "stringValue": "={{ $json['body.items'].price }}"
+            },
+            {
+              "name": "orderId",
+              "stringValue": "={{ $json['body.orderId'] }}"
+            },
+            {
+              "name": "customerEmail",
+              "stringValue": "={{ $json['body.customerEmail'] }}"
+            },
+            {
+              "name": "orderAmount",
+              "stringValue": "={{ $json['body.orderAmount'] }}"
+            }
+          ]
+        },
+        "include": "none",
+        "options": {}
+      },
+      "name": "数据预处理",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        3088,
+        3424
+      ],
+      "id": "5aed08e5-fa1a-4b95-a478-1394cd7e2c01"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://aura-unappeasable-bria.ngrok-free.dev/check-stock",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "sku",
+              "value": "={{ $json.sku }}"
+            },
+            {
+              "name": "orderId",
+              "value": "={{ $json.orderId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3440,
+        3664
+      ],
+      "id": "d975ab26-cd41-4f74-b5a5-1737fb776976",
+      "name": "库存检查API"
+    }
+  ],
+  "pinData": {
+    "拆分订单": [
+      {
+        "json": {
+          "body.items": {
+            "sku": "ITEM-001",
+            "quantity": 2,
+            "price": 99.99
+          },
+          "body.orderId": "ORD-12345",
+          "body.customerEmail": "customer@example.com",
+          "body.orderAmount": 299.99
+        }
+      },
+      {
+        "json": {
+          "body.items": {
+            "sku": "ITEM-002",
+            "quantity": 1,
+            "price": 100.01
+          },
+          "body.orderId": "ORD-12345",
+          "body.customerEmail": "customer@example.com",
+          "body.orderAmount": 299.99
+        }
+      }
+    ]
+  },
+  "connections": {
+    "订单接收": {
+      "main": [
+        [
+          {
+            "node": "拆分订单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "循环检查库存": {
+      "main": [
+        [
+          {
+            "node": "库存结果统计",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "库存检查API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "库存是否存在": {
+      "main": [
+        [
+          {
+            "node": "标记库存结果",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "标记库存结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "标记库存结果": {
+      "main": [
+        [
+          {
+            "node": "循环检查库存",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        []
+      ]
+    },
+    "拆分订单": {
+      "main": [
+        [
+          {
+            "node": "数据预处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "数据预处理": {
+      "main": [
+        [
+          {
+            "node": "循环检查库存",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "库存检查API": {
+      "main": [
+        [
+          {
+            "node": "库存是否存在",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d597a28c-c204-4b37-975d-e3d9ec4b8bb4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ad624615a4bcfedc466fba1d1260fd096b82d5bb3eb66cfb21a92b75a94700f6"
+  },
+  "id": "8g2JAvY6qRYmX1xN",
+  "tags": []
+}

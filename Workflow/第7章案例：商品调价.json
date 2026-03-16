@@ -1,0 +1,514 @@
+{
+  "name": "第7章案例：商品调价",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.output.need_adjust }}",
+              "rightValue": "YES",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d0bb4486-d08e-4cc1-96ea-fd1d5aed2656",
+      "name": "是否需要调价",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1184,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -1824,
+        -128
+      ],
+      "id": "4daf7a03-1c63-4d0c-affa-7526ed980f0a",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "H7Sjuis0MU1pWUIm",
+          "name": "DeepSeek Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.firecrawl.dev/v1/scrape",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json.competitor_url }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "25185357-1f9f-4738-bf4f-1fcf4b448bf4",
+      "name": "抓取竞品数据",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -1984,
+        32
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qntZ6ESrTHIVxiZo",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "请输入图书ISBN：",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -2272,
+        144
+      ],
+      "id": "c722b34e-5b48-4b8f-bd98-0699c8ee2a1d",
+      "name": "When chat message received",
+      "webhookId": "1eea5f85-f2a2-49fa-9ad8-7e563370c83a"
+    },
+    {
+      "parameters": {
+        "url": "=https://aura-unappeasable-bria.ngrok-free.dev/book/{{ $json.chatInput }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2112,
+        272
+      ],
+      "id": "2dcc81ba-9ab2-4c7b-aa50-5893228702e7",
+      "name": "查询商品信息"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=调用“价格计算工具”来判断是否需要调价，设置输出结果中的“isbn”为{{ $json.isbn }}：\n\n如果\"needs_adjustment\"为true，设置输出结果中的need_adjust为YES，并设置输出结果中的suggested_price为“价格计算工具”返回的suggested_price值。\n\n如果\"needs_adjustment\"为false则输出结果中的need_adjust为NO,suggested_price为原始的owner_price。 \n\n最后设置adjustment_reason为“价格计算工具”返回的adjustment_reason值",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -1488,
+        160
+      ],
+      "id": "32fc1f0e-86f6-4589-ac37-537c63ca08c8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -1552,
+        416
+      ],
+      "id": "957b8a23-78c3-4850-8bcd-4505cb390956",
+      "name": "DeepSeek Chat Model2",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "H7Sjuis0MU1pWUIm",
+          "name": "DeepSeek Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://aura-unappeasable-bria.ngrok-free.dev/price-adjustment",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "isbn",
+              "value": "={{ $json.output.isbn }}"
+            },
+            {
+              "name": "suggested_price",
+              "value": "={{ $json.output.suggested_price }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -992,
+        -112
+      ],
+      "id": "94bdfb32-0d21-4177-be70-50d8615d64ee",
+      "name": "执行调价"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取输入数据\nconst items = $input.all();\n\n// 第一个对象：包含output字段的数据\nconst firstItem = items[0].json;\n// 第二个对象：竞争对手数据\nconst secondItem = items[1].json;\n\n// 提取第一个对象中的价格（去掉¥符号并转为数字）\nconst competitorPriceStr = firstItem.output?.Price || firstItem.Price || '';\nconst competitorPrice = parseFloat(competitorPriceStr.replace(/[¥,]/g, '')) || 0;\n\n// 提取第二个对象中的价格（去掉¥符号并转为数字）\nconst ownerPriceStr = secondItem.price || '';\nconst ownerPrice = parseFloat(ownerPriceStr.replace(/[¥,]/g, '')) || 0;\n\n// 构建合并后的JSON对象\nconst mergedResult = {\n  // 书籍基本信息（从第一个对象获取）\n  title: firstItem.output?.title || firstItem.title,\n  author: firstItem.output?.author || firstItem.author,\n  isbn: firstItem.output?.ISBN || firstItem.ISBN || firstItem.isbn,\n  publisher: firstItem.output?.Publisher || firstItem.publisher,\n  publish_date: firstItem.output?.[\"Publisher Time\"] || firstItem.publish_date,  \n  competitor_price: competitorPrice,\n  owner_price: ownerPrice,  \n  competitor_url: secondItem.competitor_url\n};\n\n// 返回合并后的结果\nreturn [{ json: mergedResult }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1680,
+        288
+      ],
+      "id": "2d48836b-d04a-4cab-bd31-ee42d231617e",
+      "name": "整合数据结构"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=根据以下内容获取书籍的书名、作者、ISBN号、出版社、出版时间、当当价\n\n{{ $json.data.markdown }}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -1824,
+        32
+      ],
+      "id": "a578e426-93a1-4e9a-9e0b-2d8d154a9c39",
+      "name": "基础LLM链 - 提取图书信息"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"AI Agent开发实战：从基础原理到企业级应用\",\n  \"author\": \"郑天民\",\n  \"ISBN\": \"9787111788737\",\n  \"Publisher\": \"机械工业出版社\",\n  \"Publisher Time\": \"2025年09月\",\n  \"Price\": \"¥66.70\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1664,
+        -128
+      ],
+      "id": "a6bd3a66-660e-41b9-9ff8-329ef3abca6f",
+      "name": "图书数据结构"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -992,
+        80
+      ],
+      "id": "42d24422-eea9-4da3-86c2-44da09865d7e",
+      "name": "无需调价"
+    },
+    {
+      "parameters": {
+        "fromEmail": "1755982343@qq.com",
+        "toEmail": "1755982343@qq.com",
+        "subject": "=价格调整成功 - {{ $json.isbn }}",
+        "emailFormat": "text",
+        "text": "=本次价格调整操作已完成，操作结果如下：\n\n图书标识：{{$json.isbn}}\n调整后价格：{{$json.adjusted_price}} {{$json.currency}}\n操作状态：{{$json.success}}\n系统反馈：{{$json.message}}\n处理时间：{{$json.timestamp}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -816,
+        -112
+      ],
+      "id": "5e66ff8a-3bca-4ac9-a3fe-d42eaac4559a",
+      "name": "发送调价结果通知",
+      "webhookId": "95b1bf61-6ebb-43fa-930f-be91403b0880",
+      "credentials": {
+        "smtp": {
+          "id": "qucPoITrB5Ljuk5f",
+          "name": "QQ SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1856,
+        272
+      ],
+      "id": "ed4b5302-fef8-4025-99e9-a402955bfa8d",
+      "name": "合并商品数据"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n    \"isbn\": \"9787111788737\",\n\t\"need_adjust\": \"YES\",\n\t\"suggested_price\": \"70\",\n    \"adjustment_reason\": \"价格在合理范围内，无需调价\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1248,
+        400
+      ],
+      "id": "dcf0cdac-6ce5-4882-afb0-658d708e2388",
+      "name": "定价结果结构化"
+    },
+    {
+      "parameters": {
+        "toolDescription": "根据当前价格和竞品价格计算是否需要调价",
+        "method": "POST",
+        "url": "https://aura-unappeasable-bria.ngrok-free.dev/pricing-analysis",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "owner_price",
+              "value": "={{ $('整合数据结构').item.json.owner_price }}"
+            },
+            {
+              "name": "competitor_price",
+              "value": "={{ $('整合数据结构').item.json.competitor_price }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -1392,
+        416
+      ],
+      "id": "8ed2dd54-f54d-4234-b1af-1ec2db57c4d2",
+      "name": "价格计算工具"
+    }
+  ],
+  "pinData": {
+    "查询商品信息": [
+      {
+        "json": {
+          "author": "郑天民",
+          "competitor_url": "https://product.dangdang.com/29949448.html",
+          "isbn": "9787111788737",
+          "price": "¥71.00",
+          "publish_date": "2025年09月",
+          "publisher": "机械工业出版社",
+          "title": "AI Agent开发实战：从基础原理到企业级应用"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "是否需要调价": {
+      "main": [
+        [
+          {
+            "node": "执行调价",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "无需调价",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "基础LLM链 - 提取图书信息",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓取竞品数据": {
+      "main": [
+        [
+          {
+            "node": "基础LLM链 - 提取图书信息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "查询商品信息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询商品信息": {
+      "main": [
+        [
+          {
+            "node": "抓取竞品数据",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "合并商品数据",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "是否需要调价",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整合数据结构": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "基础LLM链 - 提取图书信息": {
+      "main": [
+        [
+          {
+            "node": "合并商品数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "图书数据结构": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "基础LLM链 - 提取图书信息",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "执行调价": {
+      "main": [
+        [
+          {
+            "node": "发送调价结果通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合并商品数据": {
+      "main": [
+        [
+          {
+            "node": "整合数据结构",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "定价结果结构化": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "价格计算工具": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f57c6cfd-ec2d-404c-8376-c4addc83487b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ad624615a4bcfedc466fba1d1260fd096b82d5bb3eb66cfb21a92b75a94700f6"
+  },
+  "id": "DSdU64ZmwvT8ZaHu",
+  "tags": []
+}

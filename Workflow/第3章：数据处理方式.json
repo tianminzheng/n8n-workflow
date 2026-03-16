@@ -1,0 +1,591 @@
+{
+  "name": "第3章：数据处理方式",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a737b7c1-11aa-4cd6-ac41-a6f1cacefcb5",
+      "name": "手动触发",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        608,
+        2032
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 6
+      },
+      "id": "ddf484ad-6c51-4ac0-b004-3247f94407be",
+      "name": "Limit - 取前6条",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 生成 10 条中文模拟订单\nconst orders = Array.from({ length: 10 }, (_, i) => ({\n  订单号: `ORD-${Date.now()}-${i + 1}`,\n  客户: ['张三','李四','王五','赵六','钱七','孙八','周九','吴十','郑一','王二'][i],\n  金额: +(Math.random() * 180 + 20).toFixed(2),\n  商品: ['办公椅','书桌','台灯','鼠标','键盘','显示器','手机','平板','耳机','摄像头'][i]\n}));\nreturn orders.map(item => ({ json: item }));"
+      },
+      "id": "f7cbb957-460f-4f97-9c55-1d5923568787",
+      "name": "Code - 生成中文订单1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "43335636-9b26-4367-a6d9-819d154f824f",
+      "name": "Aggregate - 汇总订单1",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 打印中文汇总到 Console\nconst summary = items[0].json;\nconsole.log('=== 今日订单汇总（仅含前 6 条） ===');\nconsole.log(JSON.stringify(summary, null, 2));\nreturn [{ json: { 消息: '汇总完成，已打印到 Console' } }];"
+      },
+      "id": "ff31dd2f-7413-4091-8ab4-7b006e3c3ba2",
+      "name": "Code - 打印汇总1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 打印中文汇总到 Console\nconst summary = items[0].json;\nconsole.log('=== 今日订单汇总 ===');\nconsole.log(JSON.stringify(summary, null, 2));\nreturn [{ json: { 消息: '汇总完成，已打印到 Console' } }];"
+      },
+      "id": "f1e7c77d-24c7-4855-85c7-4e7db3c1951a",
+      "name": "Code - 打印汇总",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {
+          "includeBinaries": false
+        }
+      },
+      "id": "5e8a3746-5df4-4a0b-ba25-0070c7340b3c",
+      "name": "Aggregate - 汇总订单",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        704,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 生成 10 条中文模拟订单\nconst orders = Array.from({ length: 10 }, (_, i) => ({\n  订单号: `ORD-${Date.now()}-${i + 1}`,\n  客户: ['张三', '李四', '王五', '赵六', '钱七', '孙八', '周九', '吴十', '郑一', '王二'][i],\n  金额: +(Math.random() * 180 + 20).toFixed(2),\n  商品: ['办公椅', '书桌', '台灯', '鼠标', '键盘', '显示器', '手机', '平板', '耳机', '摄像头'][i]\n}));\nreturn orders.map(item => ({ json: item }));"
+      },
+      "id": "1cdbfd21-849c-42da-96c3-a8c51298e06c",
+      "name": "Code - 生成中文订单",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    订单号: 'ORD-20251212-001',\n    明细: [\n      { 商品: '办公椅', 数量: 2 },\n      { 商品: '台灯',   数量: 1 },\n      { 商品: '键盘',   数量: 3 }\n    ]\n  }\n}];"
+      },
+      "id": "bdff4996-1826-4af2-9d52-347ec1b08875",
+      "name": "Code-生成订单",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "明细",
+        "include": "selectedOtherFields",
+        "options": {}
+      },
+      "id": "ac26832e-571c-4a73-9854-1a23c269e615",
+      "name": "SplitOut-拆分明细",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('拆分后单行：', items[0].json); return items;"
+      },
+      "id": "040881d5-2c6f-4e92-8891-5e089ed5e04f",
+      "name": "Code-打印单行",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1504,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [ { json: { 姓名: '张三', 手机号: '13800000001' } }, { json: { 姓名: '李四', 手机号: '13800000002' } },  { json: { 姓名: '王五', 手机号: '13800000001' } }, { json: { 姓名: '赵六', 手机号: '13800000003' } },  { json: { 姓名: '钱七', 手机号: '13800000002' } },{ json: { 姓名: '孙八', 手机号: '13800000004' } }];"
+      },
+      "id": "5a623324-9bbe-4e5f-8328-8233888f0a9a",
+      "name": "Code-生成含重复数据",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "options": {}
+      },
+      "id": "50186a22-c9ef-40b0-a061-05be409e02cd",
+      "name": "RemoveDuplicates-去重",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('去重后结果：'); items.forEach(it => console.log(it.json)); return items;"
+      },
+      "id": "fc5546e4-9116-4fc3-a525-2be61e85ca4f",
+      "name": "Code-打印结果",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { 商品: '办公椅', 销量: 120, 单价: 399 } },\n  { json: { 商品: '台灯',   销量: 350, 单价: 129 } },\n  { json: { 商品: '键盘',   销量: 350, 单价: 199 } },\n  { json: { 商品: '显示器', 销量: 90,  单价: 899 } },\n  { json: { 商品: '鼠标',   销量: 280, 单价: 159 } }\n];"
+      },
+      "id": "248e5831-461d-45bd-b1db-23c569766d5e",
+      "name": "Code-生成数据",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "disableDotNotation": false
+        }
+      },
+      "id": "82e3cdfb-2ed9-448c-9ecb-6b7984bc6b4e",
+      "name": "Sort-双字段排序",
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('排序后：'); items.forEach(it=>console.log(it.json)); return items;"
+      },
+      "id": "48767cef-cb27-49f3-95fd-039e4f474822",
+      "name": "Code-打印结果1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { 商品: '办公椅', 销量: 10, 销售额: 3990 } },\n  { json: { 商品: '台灯',   销量: 25, 销售额: 3225 } },\n  { json: { 商品: '键盘',   销量: 30, 销售额: 5970 } },\n  { json: { 商品: '办公椅', 销量:  5, 销售额: 1995 } },\n  { json: { 商品: '台灯',   销量: 15, 销售额: 1935 } }\n];"
+      },
+      "id": "90fee697-826d-4c5e-adbc-a10a6038583a",
+      "name": "Code-生成明细",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        1424
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "average",
+              "field": "销售额"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "[\"商品\"]",
+        "options": {}
+      },
+      "id": "b7775a1c-7bc6-4212-8c0b-5084e41bc1d4",
+      "name": "Summarize-分组汇总",
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        1424
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('分组汇总结果：'); items.forEach(it=>console.log(it.json)); return items;"
+      },
+      "id": "4dc5b995-8bc1-49f7-9304-80242fa02b94",
+      "name": "Code-打印结果2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        1424
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "var turtles = [\n  { name: '米开朗基罗', color: '橙色', value: 12 },\n  { name: '多纳泰罗',   color: '紫色', value: 34 },\n  { name: '拉斐尔',     color: '红色', value: 56 }\n];\nreturn turtles.map(t => ({ json: t }));"
+      },
+      "id": "4886ee94-c7b9-4c9e-8c0c-07cab6b8c5ed",
+      "name": "Code-生成乌龟数据",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        1760
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "//获取当前处理的单个项目数据\nconst item = $input.item;\n\n//为value属性加一\nitem.json.value =(item.json.value || 0)+ 1;\n\n//返回处理后的项目(直接返回即可传递给下游)\nreturn item;"
+      },
+      "id": "9dbad9fa-68c8-4e96-a512-4f9a4677db95",
+      "name": "Code-value+1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        1760
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('结果：'); items.forEach(it => console.log(it.json)); return items;"
+      },
+      "id": "01741d2f-00e6-4c69-b1fb-53178bbc1a3d",
+      "name": "Code-打印结果3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        1760
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "收入",
+              "value": "={{ $json[\"销售额\"] }}"
+            },
+            {
+              "name": "税金",
+              "value": "={{ $json[\"销售额\"] * 0.06 }}"
+            },
+            {
+              "name": "订单号",
+              "value": "={{ $json[\"订单号\"] }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": false
+        }
+      },
+      "id": "ba5595bc-d07c-47f9-a8f1-000257847bcd",
+      "name": "Set-改删增",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        992,
+        2032
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { 订单号: 'ORD-001', 销售额: 1000, 备注: 'VIP客户' } },\n  { json: { 订单号: 'ORD-002', 销售额: 2000, 备注: '普通客户' } }\n];"
+      },
+      "id": "f15a35a0-c7fd-4e29-9f70-45fa9c263822",
+      "name": "Code-生成订单1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        2032
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('Set 节点后结果：'); items.forEach(it=>console.log(it.json)); return items;"
+      },
+      "id": "73656366-26db-430e-9b3d-030aa3356dd9",
+      "name": "Code-打印结果4",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        2032
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "手动触发": {
+      "main": [
+        [
+          {
+            "node": "Code-生成订单1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit - 取前6条": {
+      "main": [
+        [
+          {
+            "node": "Aggregate - 汇总订单1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - 生成中文订单1": {
+      "main": [
+        [
+          {
+            "node": "Limit - 取前6条",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate - 汇总订单1": {
+      "main": [
+        [
+          {
+            "node": "Code - 打印汇总1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate - 汇总订单": {
+      "main": [
+        [
+          {
+            "node": "Code - 打印汇总",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - 生成中文订单": {
+      "main": [
+        [
+          {
+            "node": "Aggregate - 汇总订单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code-生成订单": {
+      "main": [
+        [
+          {
+            "node": "SplitOut-拆分明细",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SplitOut-拆分明细": {
+      "main": [
+        [
+          {
+            "node": "Code-打印单行",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code-生成含重复数据": {
+      "main": [
+        [
+          {
+            "node": "RemoveDuplicates-去重",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RemoveDuplicates-去重": {
+      "main": [
+        [
+          {
+            "node": "Code-打印结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code-生成数据": {
+      "main": [
+        [
+          {
+            "node": "Sort-双字段排序",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort-双字段排序": {
+      "main": [
+        [
+          {
+            "node": "Code-打印结果1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code-生成明细": {
+      "main": [
+        [
+          {
+            "node": "Summarize-分组汇总",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize-分组汇总": {
+      "main": [
+        [
+          {
+            "node": "Code-打印结果2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code-生成乌龟数据": {
+      "main": [
+        [
+          {
+            "node": "Code-value+1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code-value+1": {
+      "main": [
+        [
+          {
+            "node": "Code-打印结果3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set-改删增": {
+      "main": [
+        [
+          {
+            "node": "Code-打印结果4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code-生成订单1": {
+      "main": [
+        [
+          {
+            "node": "Set-改删增",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c16d8442-2d89-4791-947e-befc37adb9c5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ad624615a4bcfedc466fba1d1260fd096b82d5bb3eb66cfb21a92b75a94700f6"
+  },
+  "id": "8x8fNjfjhqCB7jKe",
+  "tags": []
+}

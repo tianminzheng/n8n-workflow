@@ -1,0 +1,139 @@
+{
+  "name": "第3章：错误工作流",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "91bd6f83-74c8-40bf-801d-574a428f2c9e",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 集中处理：打印错误堆栈（可换成 Send Email / 钉钉等）\nconst err = items[0].json;\nconsole.error('=== 全局错误捕获 ===');\nconsole.error('工作流 ID：', err.workflow.id);\nconsole.error('节点名称：', err.node.name);\nconsole.error('错误信息：', err.message);\nconsole.error('堆栈：', err.stack);\nreturn items;"
+      },
+      "id": "4234926c-e83f-4e56-a048-6177eafadb8c",
+      "name": "Code: 打印错误",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        64,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "886a85cf-d6aa-4256-bdb2-741c43d68631",
+      "name": "NoOp: 结束",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        272,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('正常结束'); return items;"
+      },
+      "id": "860e3eda-f1fe-4a21-9190-b7db2ab19d4a",
+      "name": "Code: 正常结束",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        336,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 故意引用不存在函数 → 抛 ReferenceError\nconst x = unknownFunc(42);\nreturn [{ json: { x } }];"
+      },
+      "id": "39412408-d8cb-4044-aea9-b321e5a770b0",
+      "name": "Code: 触发错误",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        128,
+        272
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "cdef9f19-ff98-4c47-944c-d2fa25d59fad",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        272
+      ],
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code: 打印错误",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 打印错误": {
+      "main": [
+        [
+          {
+            "node": "NoOp: 结束",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 触发错误": {
+      "main": [
+        [
+          {
+            "node": "Code: 正常结束",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code: 触发错误",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Fz0XyDjLdwF0IpTZ"
+  },
+  "versionId": "039907ab-a9e8-4be5-9851-7940d2e06aa2",
+  "meta": {
+    "instanceId": "ad624615a4bcfedc466fba1d1260fd096b82d5bb3eb66cfb21a92b75a94700f6"
+  },
+  "id": "Fz0XyDjLdwF0IpTZ",
+  "tags": []
+}

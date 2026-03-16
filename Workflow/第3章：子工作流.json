@@ -1,0 +1,138 @@
+{
+  "name": "第3章：子工作流",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "51f52ec4-2642-47f1-ae31-da294c63510b",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 读取父流程传来的参数\nconst val = $json.val;\nreturn [{ json: { result: val + 1 } }];"
+      },
+      "id": "87a4c4ea-22a3-4e06-9d0f-0b3dd1ae85f8",
+      "name": "Code: +1 并返回",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [1,2,3,4,5].map(v => ({ json: { val: v } }));"
+      },
+      "id": "9a165f5e-368f-46d7-8aeb-d4d814a25631",
+      "name": "Code: 生成数组",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "xw6SInzsB8ze8nMI",
+        "mode": "each",
+        "options": {}
+      },
+      "id": "e679a412-b2a5-4868-94d1-bf6d5baa2407",
+      "name": "Execute Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 计算所有 items 中 result 字段的总和\nconst total = items.reduce((sum, item) => sum + item.json.result, 0);\nconsole.log('累加总和：', total);\n// 返回一个新的数组，里面只放一个元素：{ total: <求和结果> }\nreturn [{ json: { total } }];"
+      },
+      "id": "26af1ee1-bbc7-48c9-9d49-dd53a651d8ce",
+      "name": "Code: 汇总结果",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        -384
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -736,
+        -384
+      ],
+      "id": "d17578d3-7dc8-43b3-a188-b08f580babc7",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code: +1 并返回",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 生成数组": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow": {
+      "main": [
+        [
+          {
+            "node": "Code: 汇总结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Code: 生成数组",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b669aba0-99f6-4a18-8a71-35362bcdffa5",
+  "meta": {
+    "instanceId": "ad624615a4bcfedc466fba1d1260fd096b82d5bb3eb66cfb21a92b75a94700f6"
+  },
+  "id": "xw6SInzsB8ze8nMI",
+  "tags": []
+}

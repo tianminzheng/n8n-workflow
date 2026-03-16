@@ -1,0 +1,297 @@
+{
+  "name": "第4章案例：订单日报",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://aura-unappeasable-bria.ngrok-free.dev/api/data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        80,
+        -448
+      ],
+      "id": "ec9dd1c2-4103-4d97-9c4c-902868cf0594",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "path": "474e7a1e-72ff-4094-a6e1-57fce1b579b3",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -176,
+        -448
+      ],
+      "id": "40bbced0-bf58-47de-a6e0-d8408dc46d23",
+      "name": "Webhook",
+      "webhookId": "474e7a1e-72ff-4094-a6e1-57fce1b579b3"
+    },
+    {
+      "parameters": {
+        "content": "## 工作流说明\n**节点说明** 这个工作流包含两个节点，一个是Webhook节点，用来暴露触发器入口供外部系统调用工作流。一个是HTTP Request节点，用来集成现有的业务系统接口。",
+        "width": 272
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        -640
+      ],
+      "id": "30b1a6d2-f665-430d-9695-98a65e3c24b9",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 8,
+              "minute": 30
+            }
+          ]
+        }
+      },
+      "id": "6cd990e2-6caf-465c-8729-49857242cc44",
+      "name": "Cron-每天08:30",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -1056,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://aura-unappeasable-bria.ngrok-free.dev/orders?date={{ $json.date }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "d260ee70-a206-4a57-9896-570ca57c54ac",
+      "name": "HTTP Request-获取已发货订单",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -640,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.CNY}}",
+              "operation": "largerEqual",
+              "value2": 10000
+            }
+          ]
+        }
+      },
+      "id": "55042518-5122-4a2e-b66c-9cb1a465395b",
+      "name": "Filter-保留高价值",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [
+        -944,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "1755982343@qq.com",
+        "toEmail": "1755982343@qq.com",
+        "subject": "高价值发货订单日报",
+        "text": "=共 {{ $input.all().length }} 个附件",
+        "attachments": "={{ Object.keys($binary).join(',') }}",
+        "options": {}
+      },
+      "id": "4b40c457-b154-40c3-932c-02fd753f4f45",
+      "name": "Send Email-通知运营",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        240
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "qucPoITrB5Ljuk5f",
+          "name": "QQ SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 工作流说明\n每天 08:30 自动抓取「内部订单服务」昨天已发货的订单，只保留金额 ≥1000 元的记录，生成 CSV 报表并邮件通知运营同学",
+        "height": 96,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -144
+      ],
+      "id": "eecfccc1-3105-4988-adbc-a883114e22f8",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 计算人民币金额、添加中文日期\nfor (const item of items) {\n  item.json.CNY = item.json.amount * item.json.exchangeRate;\n  item.json.reportDate = new Date().toLocaleDateString('zh-CN');\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        0
+      ],
+      "id": "e5372570-02d2-4590-b45e-2a6f59994730",
+      "name": "Code-计算CNY"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "=Order-{{ $json.orderId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -720,
+        240
+      ],
+      "id": "490f7471-4a31-4e10-856b-57e4472964df",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b04f83ea-184e-4687-a247-599010c497dc",
+              "name": "date",
+              "value": "={{ $today.minus(1, 'day').format('yyyy-MM-dd') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -848,
+        0
+      ],
+      "id": "2426431f-e6b2-4463-9b30-36268c890bb3",
+      "name": "Edit Field-设置目标日期"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron-每天08:30": {
+      "main": [
+        [
+          {
+            "node": "Edit Field-设置目标日期",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request-获取已发货订单": {
+      "main": [
+        [
+          {
+            "node": "Code-计算CNY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter-保留高价值": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        []
+      ]
+    },
+    "Code-计算CNY": {
+      "main": [
+        [
+          {
+            "node": "Filter-保留高价值",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Send Email-通知运营",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Field-设置目标日期": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request-获取已发货订单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "15b7ccf7-b095-4ffa-9f7f-0402effcd019",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ad624615a4bcfedc466fba1d1260fd096b82d5bb3eb66cfb21a92b75a94700f6"
+  },
+  "id": "2ieyEFlaMPyge0m7",
+  "tags": [
+    {
+      "updatedAt": "2025-12-12T03:22:58.998Z",
+      "createdAt": "2025-12-12T03:22:58.998Z",
+      "id": "rvifMLQtPwS0Upkj",
+      "name": "HTTP"
+    }
+  ]
+}

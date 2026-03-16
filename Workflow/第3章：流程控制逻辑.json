@@ -1,0 +1,1188 @@
+{
+  "name": "第3章：流程控制逻辑",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticket",
+        "options": {}
+      },
+      "id": "77dddcdf-4ddd-4959-a793-49b8e22c9d14",
+      "name": "Webhook 接收工单",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        -768
+      ],
+      "webhookId": "e4399385-83d8-4d7b-95e5-79817c8ae963"
+    },
+    {
+      "parameters": {},
+      "id": "1e091190-7a5d-4b68-bb5e-63386de751bd",
+      "name": "提取关键字段",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1232,
+        -768
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.priority}}",
+              "operation": "equals",
+              "value2": "urgent"
+            }
+          ]
+        }
+      },
+      "id": "a1d143ce-6e71-4966-b835-84bcd7706b4b",
+      "name": "优先级=紧急？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        -768
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json.supportPlan}}"
+      },
+      "id": "77038519-3ced-47ed-8cba-b63772c86f07",
+      "name": "按支持计划分流",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        -864
+      ]
+    },
+    {
+      "parameters": {
+        "subject": "建议先前往社区论坛自助排错",
+        "text": "您好，您的工单已记录。\n由于您当前为 Free 计划，建议先查阅社区论坛： https://community.example.com\n我们会同步在后台跟进。",
+        "options": {}
+      },
+      "id": "7d670127-7cc5-4326-95e2-811ea7c21de7",
+      "name": "Email-免费用户",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        -976
+      ],
+      "credentials": {
+        "smtp": {
+          "id": null,
+          "name": "smtp-credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "subject": "Premium 工单: {{$json.issue}}",
+        "text": "用户邮箱：{{$json.userEmail}}\n问题描述：{{$json.issue}}",
+        "options": {}
+      },
+      "id": "6a7d481d-d2fe-4124-b151-e9e10228d029",
+      "name": "Email-高级支持",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        -864
+      ],
+      "credentials": {
+        "smtp": {
+          "id": null,
+          "name": "smtp-credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "=https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN",
+        "options": {}
+      },
+      "id": "6051812e-dfbb-424b-a96e-55178f1e2161",
+      "name": "钉钉群机器人",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        -720
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": null,
+          "name": "dingtalk-credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "subject": "Enterprise 紧急工单: {{$json.issue}}",
+        "text": "用户邮箱：{{$json.userEmail}}\n问题描述：{{$json.issue}}\n已同步 @钉钉 群。",
+        "options": {}
+      },
+      "id": "d315c249-1572-471a-bb9b-0a3dfa1c1d99",
+      "name": "Email-企业支持",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -720
+      ],
+      "credentials": {
+        "smtp": {
+          "id": null,
+          "name": "smtp-credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "subject": "普通工单: {{$json.issue}}",
+        "text": "用户邮箱：{{$json.userEmail}}\n问题描述：{{$json.issue}}",
+        "options": {}
+      },
+      "id": "2a4b646d-03ec-422f-ae4b-1053aabbfa37",
+      "name": "Email-普通支持",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        -624
+      ],
+      "credentials": {
+        "smtp": {
+          "id": null,
+          "name": "smtp-credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "score",
+              "value": "86"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "36ef2037-48b4-4157-827d-f9348ba8f556",
+      "name": "Set score=86",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1872,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$node[\"Set score=86\"].json[\"score\"]}}",
+              "operation": "larger",
+              "value2": 80
+            }
+          ]
+        }
+      },
+      "id": "789e21c2-7a07-4b77-bb05-988a685de375",
+      "name": "IF score>80",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1680,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[IF-TRUE] 分数大于 80，当前得分：', items[0].json.score);\nreturn items;"
+      },
+      "id": "9a237ef6-f86b-4466-bf3e-c1fb54957cb6",
+      "name": "Code: 打印通过",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        80
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        288
+      ],
+      "id": "893cf207-1b6e-4281-9095-5ffcb7a5357a",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "level",
+              "value": "B"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "40fdb337-78f6-4f9c-be79-10be07c0a193",
+      "name": "Set level=B",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2688,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$node[\"Set level=B\"].json[\"level\"]}}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "A"
+            },
+            {
+              "value2": "B",
+              "output": 1
+            },
+            {
+              "value2": "C",
+              "output": 2
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "id": "58264413-c601-4631-94e5-d2d27e32226e",
+      "name": "SWITCH level",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -2496,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[SWITCH] 命中分支 0 → A');\nreturn items;"
+      },
+      "id": "c6edd1d8-52b3-4ee3-be4b-f319520a84a7",
+      "name": "Code: 分支A",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2288,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[SWITCH] 命中分支 1 → B');\nreturn items;"
+      },
+      "id": "7f8acc61-1fe8-49d0-a7b6-52d531621091",
+      "name": "Code: 分支B",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2288,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[SWITCH] 命中分支 2 → C');\nreturn items;"
+      },
+      "id": "52040bf6-14be-4efc-b12b-5026acfff78e",
+      "name": "Code: 分支C",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2288,
+        448
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "03cfb7fb-c216-4e40-acfa-2d63ffac1dc0",
+      "name": "NoOp: 其他",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -2288,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "branch",
+              "value": "A"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5f8922d3-2633-46db-b059-ac2b1c731db8",
+      "name": "Set branch=A",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2832,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "branch",
+              "value": "B"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "27db5b18-0332-47c2-9d95-ef2f5a77f93d",
+      "name": "Set branch=B",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2832,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[Branch A] 当前分支：', items[0].json.branch);\nreturn items;"
+      },
+      "id": "79eaf246-f3df-42f4-981c-7f8d5c89f1be",
+      "name": "Code: A日志",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2656,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[Branch B] 当前分支：', items[0].json.branch);\nreturn items;"
+      },
+      "id": "276e1d69-ede0-4771-97d7-f7b69459098e",
+      "name": "Code: B日志",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2656,
+        1376
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "843326d9-7578-4621-ae7d-79f6a22c6cce",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -2480,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[After Merge] 合并后数据：', items.map(i => i.json));\nreturn items;"
+      },
+      "id": "1ae9c2ef-ec33-471d-8ac5-45d0f4d9e6d4",
+      "name": "Code: 合并后日志",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2320,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 用户列表\nreturn [\n  { json: { name: 'Stefan', lang: 'de' } },\n  { json: { name: 'Jim',   lang: 'en' } }\n];"
+      },
+      "id": "014b8823-b4b3-440d-adcf-fa131684c625",
+      "name": "Code: 用户列表",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2640,
+        1712
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 问候语列表\nreturn [\n  { json: { greeting: 'Hallo', lang: 'de' } },\n  { json: { greeting: 'Hello', lang: 'en' } }\n];"
+      },
+      "id": "d291960e-cbcb-4d56-8665-8a73f9595396",
+      "name": "Code: 问候语列表",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2640,
+        1920
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "lang",
+              "field2": "lang"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "53c0da16-cd06-45d7-904e-d0abf7d3d0d6",
+      "name": "Merge: Combine",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -2416,
+        1824
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[After Combine] 合并结果:', items.map(i => i.json));\nreturn items;"
+      },
+      "id": "96c4e149-97bc-4200-a95f-443533a05ae7",
+      "name": "Code: 打印结果",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2240,
+        1824
+      ]
+    },
+    {
+      "parameters": {
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "email",
+              "field2": "email"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8f9e6cb-ca35-4495-aff9-bf1e96a20b2f",
+      "name": "Compare Datasets",
+      "type": "n8n-nodes-base.compareDatasets",
+      "typeVersion": 1,
+      "position": [
+        -2752,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[移除] 在旧名单但不在新名单：', items.map(i => i.json)); return items;"
+      },
+      "id": "0d5d7615-ac79-4261-ad07-b741b36fab7c",
+      "name": "Code: 打印移除",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2416,
+        2720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[相同] 新旧名单都出现：', items.map(i => i.json)); return items;"
+      },
+      "id": "203d79a2-6b90-4618-9785-96966c7a15c7",
+      "name": "Code: 打印相同",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2400,
+        2544
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 旧名单\nreturn [\n  { json: { email: 'alice@example.com' } },\n  { json: { email: 'bob@example.com' } },\n  { json: { email: 'charlie@example.com' } }\n];"
+      },
+      "id": "87f654c2-b316-469e-8c23-096b733cbea3",
+      "name": "Code: 旧名单",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2960,
+        2464
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 新名单\nreturn [\n  { json: { email: 'alice@example.com' } },\n  { json: { email: 'bob@example.com' } },\n  { json: { email: 'diana@example.com' } }\n];"
+      },
+      "id": "5a72ec2e-41b2-4c30-a9ce-5b13674bd958",
+      "name": "Code: 新名单",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2960,
+        2704
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[新增] 在新名单但不在旧名单：', items.map(i => i.json)); return items;"
+      },
+      "id": "bb33bc9d-d3a4-4099-b0c3-98869e018651",
+      "name": "Code: 打印新增",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2544,
+        2400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 构造初始数据：数组 + 当前索引 + 累加器\nreturn [{\n  json: {\n    arr: [10, 20, 30, 40],\n    idx: 0,\n    sum: 0\n  }\n}];"
+      },
+      "id": "cdc2dbe5-ade7-43b5-9579-b14db8cdffda",
+      "name": "Code: 初始数据",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -1872,
+        2496
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.idx }}",
+              "value2": "={{ $json.arr.length }}"
+            }
+          ]
+        }
+      },
+      "id": "fb74ed60-d913-47d5-8361-8bbce1580f36",
+      "name": "IF: 继续循环？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1664,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 取出当前元素并累加\nconst arr = $json.arr;\nconst idx = $json.idx;\nconst sum = $json.sum + arr[idx];\nreturn [{\n  json: { arr, idx: idx + 1, sum }\n}];"
+      },
+      "id": "144d7305-26e6-4698-8e56-070728ae2aac",
+      "name": "Code: 处理当前项",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        2544
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "08758619-6edb-4f17-b451-e6ff6bed14a1",
+      "name": "NoOp: 循环结束",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        2752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('最终结果：', $json); return items;"
+      },
+      "id": "402c4d98-0054-4a92-ac06-63a46f919546",
+      "name": "Code: 打印结果1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -1264,
+        2752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [1,2,3,4,5].map(v => ({ json: { num: v } }));"
+      },
+      "id": "8eb65c18-3a44-4f9b-8226-f8fafb420b24",
+      "name": "Code: 生成数据",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -1280,
+        3120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('当前条：', $json); return items;"
+      },
+      "id": "0c1efc09-77b3-46e0-a4f1-9fa26575d297",
+      "name": "Code: 打印当前",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        3024
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 2,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1088,
+        3120
+      ],
+      "id": "09692156-1051-4ed0-8018-dd7bc9ecbca4",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "替换我",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        3200
+      ],
+      "id": "24aab1cf-c813-4580-98d8-98529fd73879"
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('开始时间：', new Date().toLocaleString()); return items;"
+      },
+      "id": "fe38d937-0100-4b16-b70a-3bca7e016790",
+      "name": "Code: 打印开始",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2320,
+        2976
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": {}
+      },
+      "id": "803fcd96-1ed2-4e01-a0a0-4764bede72c7",
+      "name": "Wait: 固定10秒",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -2144,
+        2976
+      ],
+      "webhookId": "f9261dbf-efd9-4742-986a-45c924b4d660"
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('结束时间：', new Date().toLocaleString()); return items;"
+      },
+      "id": "3d6bd2d9-91da-412b-849b-c2a326968dea",
+      "name": "Code: 打印结束",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -1968,
+        2976
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3104,
+        1264
+      ],
+      "id": "aeb6570e-49db-4587-9afc-652b5bdd8260",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook 接收工单": {
+      "main": [
+        [
+          {
+            "node": "提取关键字段",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取关键字段": {
+      "main": [
+        [
+          {
+            "node": "优先级=紧急？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "优先级=紧急？": {
+      "main": [
+        [
+          {
+            "node": "按支持计划分流",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email-普通支持",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "按支持计划分流": {
+      "main": [
+        [
+          {
+            "node": "Email-免费用户",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email-高级支持",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "钉钉群机器人",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "钉钉群机器人": {
+      "main": [
+        [
+          {
+            "node": "Email-企业支持",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set score=86": {
+      "main": [
+        [
+          {
+            "node": "IF score>80",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF score>80": {
+      "main": [
+        [
+          {
+            "node": "Code: 打印通过",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set level=B": {
+      "main": [
+        [
+          {
+            "node": "SWITCH level",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SWITCH level": {
+      "main": [
+        [
+          {
+            "node": "Code: 分支A",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code: 分支B",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code: 分支C",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NoOp: 其他",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set branch=A": {
+      "main": [
+        [
+          {
+            "node": "Code: A日志",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set branch=B": {
+      "main": [
+        [
+          {
+            "node": "Code: B日志",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: A日志": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: B日志": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code: 合并后日志",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 用户列表": {
+      "main": [
+        [
+          {
+            "node": "Merge: Combine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 问候语列表": {
+      "main": [
+        [
+          {
+            "node": "Merge: Combine",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Combine": {
+      "main": [
+        [
+          {
+            "node": "Code: 打印结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Datasets": {
+      "main": [
+        [
+          {
+            "node": "Code: 打印新增",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code: 打印相同",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code: 打印移除",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Code: 旧名单": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 新名单": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code: 初始数据": {
+      "main": [
+        [
+          {
+            "node": "IF: 继续循环？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: 继续循环？": {
+      "main": [
+        [
+          {
+            "node": "Code: 处理当前项",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NoOp: 循环结束",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 处理当前项": {
+      "main": [
+        [
+          {
+            "node": "IF: 继续循环？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NoOp: 循环结束": {
+      "main": [
+        [
+          {
+            "node": "Code: 打印结果1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Code: 打印当前",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "替换我",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "替换我": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 生成数据": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 打印开始": {
+      "main": [
+        [
+          {
+            "node": "Wait: 固定10秒",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait: 固定10秒": {
+      "main": [
+        [
+          {
+            "node": "Code: 打印结束",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 打印结束": {
+      "main": [
+        []
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set branch=A",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set branch=B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Fz0XyDjLdwF0IpTZ"
+  },
+  "versionId": "2cee06a6-937a-48b2-aaf3-89f67a02d96d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ad624615a4bcfedc466fba1d1260fd096b82d5bb3eb66cfb21a92b75a94700f6"
+  },
+  "id": "j3ke8ErIKKk6wNJr",
+  "tags": []
+}
